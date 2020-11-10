@@ -1,5 +1,9 @@
 import { deflateRawSync } from 'zlib';
 
+export interface ITemperer<T> {
+	process(input: T): T;
+}
+
 export interface Options {
 	readonly maxRounds: number;
 }
@@ -25,7 +29,17 @@ export abstract class Temperer<T extends string | Uint8Array> {
 		}
 	}
 
+	/**
+	 * Implement your own in a subclass!
+	 * @param input stuff to break up into movable chunks
+	 * @returns an array of chunks (without header and banner)
+	 */
 	protected abstract _split(input: T): readonly T[];
+	/**
+	 * Implement your own in a subclass!
+	 * @param chunks an array of chunks (without header and banner)
+	 * @returns glued up stuff
+	 */
 	protected abstract _assemble(chunks: readonly T[]): T;
 
 	public process(input: T): T {
@@ -119,7 +133,7 @@ export abstract class Temperer<T extends string | Uint8Array> {
 		return deflateRawSync(this._assemble(chunks)).byteLength;
 	}
 
-	protected _log(message: string) {
+	protected _log(message: string): void {
 		// Does nothing in the base class
 	}
 }

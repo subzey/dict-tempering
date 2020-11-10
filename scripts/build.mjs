@@ -49,6 +49,9 @@ async function main() {
 		copyFile('build/json5.js', 'dist/json5.js'),
 		copyFile('build/json5.d.ts', 'dist/json5.d.ts'),
 
+		copyFile('build/newline.js', 'dist/newline.js'),
+		copyFile('build/newline.d.ts', 'dist/newline.d.ts'),
+
 		copyFile('build/cli.js', 'dist/cli.js'),
 	]);
 
