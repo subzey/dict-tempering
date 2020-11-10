@@ -19,18 +19,21 @@ async function readEntireStream(inputStream: AsyncIterable<Uint8Array>): Promise
 
 async function main(): Promise<void> {
 	const argv = (yargs(process.argv.slice(2))
+		.usage(`dict-tempering`)
+		.usage('Change properties order for better GZIPpability.')
+		.usage('Pass the input sting into stdin and the the result from stdout.')
 		.options({
-			type: { choices: availTypes, default: 'json5' },
-			maxRounds: { type: 'number' },
+			type: { choices: availTypes, default: 'json5', description: 'Type of the input and output' },
+			'max-rounds': { type: 'number', description: 'Max amount of rounds' },
 		})
-		.example('<input.json5 $0 >output.json5', 'Process JSON5 string')
-		.example('<input.json $0 --type=json >output.json', 'Process JSON string')
-		.example('<input.txt $0 --type=newline >output.txt', 'Process newline separated text')
+		.example('$0 <input.json5 >output.json5', '')
+		.example('$0 --type=json <input.json5 >output.json5', '')
+		.example('$0 --type=newline <input.txt >output.txt', '')
 		.argv
 	);
 
 	if (process.stdin.isTTY && process.stderr.isTTY) {
-		process.stderr.write('Pipe or type the string into stdin...\n');
+		process.stderr.write('Pipe or type the string into stdin!\n');
 	}
 
 	let Implementation: { new(opts?: Partial<Options>): ITemperer<string> } = (
@@ -46,7 +49,7 @@ async function main(): Promise<void> {
 		}
 	}
 
-	const res = new LoggingImpl({ maxRounds: argv.maxRounds }).process(await readEntireStream(process.stdin));
+	const res = new LoggingImpl({ maxRounds: argv['max-rounds'] }).process(await readEntireStream(process.stdin));
 
 	process.stdout.write(res);
 }

@@ -2,30 +2,33 @@
     "private": true,
     "type": "module",
     "name": "dict-tempering",
-    "version": "0.1.0-alpha.1",
+    "version": "0.1.0",
     "description": "Change properties order for better GZIPpability",
+    "license": "MIT",
+    "repository": {"type": "git", "url": "https://github.com/subzey/dict-tempering.git"},
     "exports": {
-      ".": "./index.js"
+      "./base": "./base.js",
+      "./json": "./json.js",
+      "./json5": "./json5.js",
+      "./newline": "./newline.js"
     },
-    "module": "index.js",
-    "typings": "index.d.ts",
     "bin": {
       "dict-tempering": "./cli.js"
     },
     "scripts": {
-        "build": "tsc && node ./scripts/build.mjs",
-        "test": "exit 1",
-        "polish": "node ./scripts/polish.js",
-        "prerelease": "npm run build && npm run test && npm run polish"
+      "build": "tsc && node ./scripts/build.mjs",
+      "test": "node ./scripts/test.mjs",
+      "polish": "node ./scripts/polish.mjs",
+      "dist": "npm run build && npm run test && npm run polish"
     },
     "devDependencies": {
-        "@types/json5": "0.0.30",
-        "@types/node": "14.14.2",
-        "@types/yargs": "^15.0.9",
-        "typescript": "4.0.3"
+      "@types/json5": "0.0.30",
+      "@types/node": "14.14.2",
+      "@types/yargs": "^15.0.9",
+      "typescript": "4.0.3"
     },
     "dependencies": {
-        "json5": "^2.1.3",
-        "yargs": "^16.1.0"
+      "json5": "^2.1.3",
+      "yargs": "^16.1.0"
     }
 }
