@@ -12,7 +12,7 @@ async function readEntireStream(inputStream: AsyncIterable<Uint8Array>): Promise
 
 async function main(): Promise<void> {
 	if (process.stdin.isTTY && process.stderr.isTTY) {
-		process.stderr.write('Avaiting JSON string in stdin...\n');
+		process.stderr.write('Awaiting JSON string in stdin...\n');
 	}
 
 	const res = temper(

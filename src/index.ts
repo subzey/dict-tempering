@@ -4,7 +4,7 @@ import JSON5 from 'json5';
 export type LoggingFunction = (this: void, message: string) => unknown;
 
 export interface Options {
-	readonly type: 'json' | 'json5';
+	readonly type: 'json' | 'json5' | 'newline';
 	readonly maxRounds: number;
 	readonly logNormal: LoggingFunction;
 	readonly logDebug: LoggingFunction;
@@ -13,13 +13,19 @@ export interface Options {
 type Chunk = string;
 type JSONSerializable = string | number | boolean | null | Record<string, unknown> | unknown[];
 type Variant = {
-	chunks: readonly Chunk[];
-	nucleusStart: number;
-	nucleusEnd: number;
-	score: number;
+	readonly chunks: readonly Chunk[];
+	readonly nucleusStart: number;
+	readonly nucleusEnd: number;
+	readonly score: number;
 }
 
-export function temper(input: string | Record<string, unknown>, options?: Partial<Options>): string;
+interface Padding {
+	readonly banner: string;
+	readonly separator: string;
+	readonly footer: string;
+}
+
+export function temper(input: string | {readonly [key: string]: unknown} | readonly unknown[], options?: Partial<Options>): string;
 export function temper(input: unknown, options?: {[key in keyof Options]?: unknown}): string {
 	const {
 		type,
@@ -28,11 +34,7 @@ export function temper(input: unknown, options?: {[key in keyof Options]?: unkno
 		logDebug
 	} = normalizeOptions(options);
 
-	let originalDict = parse(input);
-	let chunks = (type === 'json'
-		? makeJSONChunks(originalDict)
-		: makeJSON5Chunks(originalDict)
-	);
+	let { chunks, padding } = makeChunks(input, type);
 
 	if (chunks.length > 100) {
 		logDebug('Looks like it will take a long time. Sit back and enjoy');
@@ -40,10 +42,10 @@ export function temper(input: unknown, options?: {[key in keyof Options]?: unkno
 
 	if (chunks.length < 2) {
 		logNormal('There\'s nothing to shuffle');
-		return assemble(chunks);
+		return assemble(chunks, padding);
 	}
 
-	let startOfRoundScore = estimate(chunks);
+	let startOfRoundScore = estimate(chunks, padding);
 
 	for (let round = 1; round <= maxRounds; round++) {
 		logNormal(`Prev best: ${startOfRoundScore}. Round #${round}...`);
@@ -61,7 +63,7 @@ export function temper(input: unknown, options?: {[key in keyof Options]?: unkno
 			const newVariants = [];
 			for (const oldVariant of variants) {
 				for (const newVariant of combinations(oldVariant)) {
-					newVariant.score = estimate(newVariant.chunks);
+					newVariant.score = estimate(newVariant.chunks, padding);
 					newVariants.push(newVariant);
 				}
 			}
@@ -80,7 +82,7 @@ export function temper(input: unknown, options?: {[key in keyof Options]?: unkno
 		startOfRoundScore = bestVariant.score;
 	}
 
-	return assemble(chunks);
+	return assemble(chunks, padding);
 }
 
 
@@ -125,41 +127,83 @@ function normalizeOptions(options?: {[key in keyof Options]?: unknown}): Options
 	};
 }
 
-function parse(input: unknown): Record<string, unknown> {
-	const rv: JSONSerializable = (typeof input === 'string'
-		? JSON5.parse(input)
-		: input
-	);
-	if (typeof rv !== 'object' || rv === null || Array.isArray(rv)) {
-		throw new TypeError(`A JSON object is expected`);
+function makeChunks(input: unknown, type: Options['type']): { chunks: readonly Chunk[]; padding: Padding } {
+	if (type === 'json') {
+		return makeJSONChunks(input);
 	}
-	return rv;
+
+	if (type === 'json5') {
+		return makeJSON5Chunks(input);
+	}
+
+	if (type === 'newline') {
+		return makeNewlineChunks(input);
+	}
+
+	throw new Error(`Unknown type ${type}`);
 }
 
-function makeJSONChunks(dict: Record<string, unknown>): readonly Chunk[] {
-	const rv: Chunk[] = [];
-	for (const [key, value] of Object.entries(dict)) {
-		const valueSerialized = JSON.stringify(value);
-		const keySerialized = JSON.stringify(key);
-		rv.push(`${keySerialized}:${valueSerialized}`);
+function makeJSONChunks(input: unknown): { chunks: readonly Chunk[]; padding: Padding } {
+	// JSON is parsed as JSON5
+	const stuff: JSONSerializable = typeof input === 'string' ? JSON5.parse(input) : input;
+
+	if (Array.isArray(stuff)) {
+		const chunks: Chunk[] = [];
+		for (const value of stuff) {
+			chunks.push(JSON.stringify(value));
+		}
+		return {
+			chunks: chunks,
+			padding: { banner: '[', separator: ',', footer: ']' },
+		};
 	}
-	return rv;
+
+	if (stuff !== null && typeof stuff === 'object') {
+		const chunks: Chunk[] = [];
+		for (const [key, value] of Object.entries(stuff)) {
+			chunks.push(`${JSON.stringify(key)}:${JSON.stringify(value)}`);
+		}
+		return {
+			chunks: chunks,
+			padding: { banner: '{', separator: ',', footer: '}' },
+		};
+	}
+
+	throw new TypeError('A JSON object or array is expected');
 }
 
-function makeJSON5Chunks(dict: Record<string, unknown>): readonly Chunk[] {
-	const rv: Chunk[] = [];
-	for (const [key, value] of Object.entries(dict)) {
-		const keySerialized = escapeJSON5Key(key);
-		const valueSerialized = JSON5.stringify(value);
-		rv.push(`${keySerialized}:${valueSerialized}`);
+function makeJSON5Chunks(input: unknown): { chunks: readonly Chunk[]; padding: Padding } {
+	const stuff: JSONSerializable = typeof input === 'string' ? JSON5.parse(input) : input;
+
+	if (Array.isArray(stuff)) {
+		const chunks: Chunk[] = [];
+		for (const value of stuff) {
+			chunks.push(JSON.stringify(value));
+		}
+		return {
+			chunks: chunks,
+			padding: { banner: '[', separator: ',', footer: ']' },
+		};
 	}
-	return rv;
+
+	if (stuff !== null && typeof stuff === 'object') {
+		const chunks: Chunk[] = [];
+		for (const [key, value] of Object.entries(stuff)) {
+			chunks.push(`${escapeJSON5Key(key)}:${JSON5.stringify(value)}`);
+		}
+		return {
+			chunks: chunks,
+			padding: { banner: '{', separator: ',', footer: '}' },
+		};
+	}
+
+	throw new TypeError('A JSON5 object or array is expected');
 }
 
 function escapeJSON5Key(str: string): string {
 	try {
 		if (/\s/.test(str)) {
-			throw new SyntaxError('key should not contain whitespaces');
+			throw new SyntaxError('A key should not contain whitespaces');
 		}
 		void JSON5.parse(`{${str}: null}`);
 		return str;
@@ -168,12 +212,38 @@ function escapeJSON5Key(str: string): string {
 	}
 }
 
-function assemble(chunks: readonly Chunk[]): string {
-	return `{${chunks.join(',')}}`;
+function makeNewlineChunks(input: unknown): { chunks: readonly Chunk[]; padding: Padding } {
+	if (Array.isArray(input)) {
+		const chunks = [];
+		for (const chunk of input) {
+			if (typeof chunk !== 'string') {
+				throw new TypeError('The input array should be an array of strings');
+			}
+			chunks.push(chunk);
+		}
+		return {
+			chunks: chunks,
+			padding: { banner: '', separator: '\n', footer: '' },
+		};
+	}
+
+	if (typeof input === 'string') {
+		const chunks = input.split(/\r?\n/).filter(Boolean);
+		return {
+			chunks: chunks,
+			padding: { banner: '', separator: '\n', footer: '' },
+		};
+	}
+
+	throw new TypeError('A string or JS array of strings is expected');
 }
 
-function estimate(chunks: readonly Chunk[]): number {
-	return deflateRawSync(assemble(chunks)).byteLength;
+function assemble(chunks: readonly Chunk[], padding: Padding): string {
+	return padding.banner + chunks.join(padding.separator) + padding.footer;
+}
+
+function estimate(chunks: readonly Chunk[], padding: Padding): number {
+	return deflateRawSync(assemble(chunks, padding)).byteLength;
 }
 
 function* combinations(variant: Variant) {
