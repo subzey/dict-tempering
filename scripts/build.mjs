@@ -40,8 +40,15 @@ async function main() {
 	}
 
 	await Promise.all([
-		copyFile('build/index.js', 'dist/index.js'),
-		copyFile('build/index.d.ts', 'dist/index.d.ts'),
+		copyFile('build/base.js', 'dist/base.js'),
+		copyFile('build/base.d.ts', 'dist/base.d.ts'),
+
+		copyFile('build/json.js', 'dist/json.js'),
+		copyFile('build/json.d.ts', 'dist/json.d.ts'),
+
+		copyFile('build/json5.js', 'dist/json5.js'),
+		copyFile('build/json5.d.ts', 'dist/json5.d.ts'),
+
 		copyFile('build/cli.js', 'dist/cli.js'),
 	]);
 
