@@ -2,7 +2,7 @@
     "private": true,
     "type": "module",
     "name": "dict-tempering",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Change properties order for better GZIPpability",
     "license": "MIT",
     "repository": {"type": "git", "url": "https://github.com/subzey/dict-tempering.git"},
