@@ -53,7 +53,7 @@ async function main() {
 		copyFile('build/newline.d.ts', 'dist/newline.d.ts'),
 
 		copyFile('build/cli.js', 'dist/cli.js'),
-		copyFile('readme.md', 'dist/readme.md'),
+		copyFile('README.md', 'dist/README.md'),
 	]);
 
 	console.log('Enhancing DX...');
