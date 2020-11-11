@@ -8,6 +8,8 @@ export interface Options {
 	readonly maxRounds: number;
 }
 
+export type LogLevel = 'error' | 'warning' | 'info' | 'progress' | 'debug';
+
 interface Variant<T> {
 	readonly chunks: readonly T[];
 	readonly nucleusStart: number;
@@ -15,7 +17,7 @@ interface Variant<T> {
 	score: number;
 }
 
-export abstract class Temperer<T extends string | Uint8Array> {
+export abstract class Temperer<T extends string | Uint8Array> implements ITemperer<T> {
 	private _maxRounds: number;
 
 	constructor(options?: Partial<Options>);
@@ -46,18 +48,18 @@ export abstract class Temperer<T extends string | Uint8Array> {
 		let chunks = this._split(input);
 
 		if (chunks.length > 100) {
-			this._log('Looks like it will take a long time. Sit back and enjoy');
+			this._log('Looks like it will take a long time. Sit back and enjoy', 'debug');
 		}
 
 		if (chunks.length < 2) {
-			this._log('There\'s nothing to shuffle');
+			this._log('There\'s nothing to shuffle', 'info');
 			return this._assemble(chunks);
 		}
 
 		let startOfRoundScore = this._estimate(chunks);
 
 		for (let round = 1; round <= this._maxRounds; round++) {
-			this._log(`Prev best: ${startOfRoundScore}. Round #${round}...`);
+			this._log(`Round #${round}...`, 'info');
 
 			let variants: Variant<T>[] = [];
 			for (let i = 0; i < chunks.length; i++) {
@@ -65,10 +67,12 @@ export abstract class Temperer<T extends string | Uint8Array> {
 					chunks: chunks,
 					nucleusStart: i,
 					nucleusEnd: i + 1,
-					score: 0,
+					score: startOfRoundScore,
 				});
 			}
+
 			while (variants[0].nucleusEnd - variants[0].nucleusStart < variants[0].chunks.length) {
+				this._log(`${variants[0].score} so far`, 'progress');
 				const newVariants = [];
 				for (const oldVariant of variants) {
 					for (const newVariant of this._combinations(oldVariant)) {
@@ -77,16 +81,15 @@ export abstract class Temperer<T extends string | Uint8Array> {
 					}
 				}
 				variants = newVariants.sort(sortByScore).slice(0, chunks.length);
-				this._log(`...${variants[0].score} so far`);
 			};
 
 			const bestVariant = variants[0];
 			if (!bestVariant || bestVariant.score >= startOfRoundScore) {
-				this._log(`Round #${round} finished: No size reduction, exiting`);
+				this._log(`Round #${round} finished: no size reduction`, 'info');
 				break;
 			}
 
-			this._log(`Round #${round} finished: ${startOfRoundScore} -> ${bestVariant.score}`);
+			this._log(`Round #${round} finished: ${startOfRoundScore - bestVariant.score} B size reduction`, 'info');
 			chunks = bestVariant.chunks;
 			startOfRoundScore = bestVariant.score;
 		}
@@ -98,6 +101,12 @@ export abstract class Temperer<T extends string | Uint8Array> {
 		const nucleus: T[] = [];
 		const pool: T[] = [];
 
+		//  ╭ "nucleus" ╮ ╭─── "pool" ────╮
+		// ╔══════╤══════╦─────┬─────┬─────┐
+		// ║ woot │ root ║ foo │ bar │ baz │
+		// ╚══════╧══════╩─────┴─────┴─────┘
+		//  ╰─────────── chunks ──────────╯
+
 		for (let i = 0; i < variant.chunks.length; i++) {
 			if (i >= variant.nucleusStart && i < variant.nucleusEnd) {
 				nucleus.push(variant.chunks[i]);
@@ -107,8 +116,17 @@ export abstract class Temperer<T extends string | Uint8Array> {
 		}
 
 		for (let i = 0; i < pool.length; i++) {
+			//                  ╭─────────→ ────╮
+			// ╔══════╤══════╗ ┌─────┬─────┬─────┐
+			// ║ woot │ root ║ │ baz │ foo │ bar │
+			// ╚══════╧══════╝ └─────┴─────┴─────┘
+			//                  ╰──── ←─────────╯
 			pool.unshift(pool.pop()!);
+
 			{
+				// ╔══════╤══════╤═════╦─────┬─────┐
+				// ║ woot │ root │ baz ║ foo │ bar │
+				// ╚══════╧══════╧═════╩─────┴─────┘
 				const chunks = [...nucleus, ...pool];
 				yield {
 					chunks: chunks,
@@ -118,6 +136,9 @@ export abstract class Temperer<T extends string | Uint8Array> {
 				}
 			}
 			{
+				// ┌─────┬─────╦══════╤══════╤═════╗
+				// │ foo │ bar ║ woot │ root │ baz ║
+				// └─────┴─────╩══════╧══════╧═════╝
 				const chunks = [...pool, ...nucleus];
 				yield {
 					chunks: chunks,
@@ -133,7 +154,7 @@ export abstract class Temperer<T extends string | Uint8Array> {
 		return deflateRawSync(this._assemble(chunks)).byteLength;
 	}
 
-	protected _log(message: string): void {
+	protected _log(message: string, logLevel?: LogLevel): void {
 		// Does nothing in the base class
 	}
 }

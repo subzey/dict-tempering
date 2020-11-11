@@ -2,10 +2,18 @@
     "private": true,
     "type": "module",
     "name": "dict-tempering",
-    "version": "0.1.1",
+    "version": "0.1.2-rc.1",
     "description": "Change properties order for better GZIPpability",
+    "keywords": ["order", "sort", "shuffle", "tempering", "gzip", "compression"],
     "license": "MIT",
-    "repository": {"type": "git", "url": "https://github.com/subzey/dict-tempering.git"},
+    "author": {
+      "name": "Anton Khlynovskiy",
+      "email": "subzey@gmail.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/subzey/dict-tempering.git"
+    },
     "exports": {
       "./base": "./base.js",
       "./json": "./json.js",
@@ -30,5 +38,8 @@
     "dependencies": {
       "json5": "^2.1.3",
       "yargs": "^16.1.0"
+    },
+    "engines": {
+      "node": ">= 12.0.0"
     }
 }

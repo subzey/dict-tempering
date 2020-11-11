@@ -1,3 +1,4 @@
+import { deepStrictEqual } from 'assert';
 import { gzipSync } from 'zlib';
 import { JSONTemperer } from '../dist/json.js';
 
@@ -12,8 +13,9 @@ function check(label, monthNames) {
 	const strAlpha = JSON.stringify(monthNames.slice().sort());
 	const strTempered = new JSONTemperer().process(strOrd);
 
-	console.assert(
-		JSON.stringify(JSON.parse(strTempered).sort()) === strAlpha,
+	deepStrictEqual(
+		[...JSON.parse(strTempered)].sort(),
+		[...monthNames].sort(),
 		'should contain all the original values'
 	);
 
