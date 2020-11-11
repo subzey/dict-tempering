@@ -65,7 +65,7 @@ You know the order is not important, but the GZIP/Brotli compressor doesn't know
 
 But it would help you in [JS code golf](https://jsgolf.club/) where every byte counts.
 
-Or you can reshuffle properties in the source code once and [get a size recution forever](https://github.com/tradingview/lightweight-charts/commit/13ab1c6a76de9e35ffdc465afb159176d935c88f). _In fact, this entire project started as a makeshift script for this commit._
+Or you can reshuffle properties in the source code once and [get a size reduction forever](https://github.com/tradingview/lightweight-charts/commit/13ab1c6a76de9e35ffdc465afb159176d935c88f). _In fact, this entire project started as a makeshift script for this commit._
 
 ## Is it fast?
 
