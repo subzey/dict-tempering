@@ -55,7 +55,7 @@ Ultimately, this code will be minified and served being GZIPped. 154 bytes .min.
 
 You know the order is not important, but the GZIP/Brotli compressor doesn't know that. Let's help it and change the order of properies. Now it's 145 bytes .min.gz
 
-![gzthermal evaluation result](https://github.com/subzey/dict-tempering/blob/master/docs/16-colors-tempered.png)
+![gzthermal evaluation result](https://github.com/subzey/dict-tempering/raw/master/docs/16-colors-tempered.png)
 
 9 bytes (or 6%) size reduction out of thin air. It's not too much, but it's for free!
 

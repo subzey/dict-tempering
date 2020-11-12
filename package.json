@@ -2,7 +2,7 @@
     "private": true,
     "type": "module",
     "name": "dict-tempering",
-    "version": "0.1.2-rc.1",
+    "version": "0.1.2-rc.2",
     "description": "Change properties order for better GZIPpability",
     "keywords": ["order", "sort", "shuffle", "tempering", "gzip", "compression"],
     "license": "MIT",
