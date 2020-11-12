@@ -59,7 +59,7 @@ async function main() {
 	console.log('Enhancing DX...');
 
 	let cliCode = await readFile('dist/cli.js', { encoding: 'utf-8' });
-	cliCode = cliCode.replace(/\bimport\b.*/, '$& //\u001b[31;1m You need node >= 12.0.0! \u001b[m');
+	cliCode = cliCode.replace(/\bimport\b.*/, '$& //\u001b[31;1m You need Node.js >= 12.0.0! \u001b[m');
 	await writeFile('dist/cli.js', cliCode);
 
 
